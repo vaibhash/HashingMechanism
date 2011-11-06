@@ -10,9 +10,9 @@ typedef struct linkNode{
 }Node;
 
 int const M = 16;
-long int const n = 1000000;
+long int const n = 100000;
 int const w = 32;
-long int const m = 65536    ;//pow(2,M)
+long int const m = 65536      ;//pow(2,M)
 
 		
 class ChainedHash{
@@ -20,8 +20,8 @@ class ChainedHash{
 		Node* HashTable[m]; 
 		long int randomSeed;
 		long int max;
-		long int avg;
-		long int mu;
+		double avg;
+		double mu;
 		long int totalCount;
 
 		bool genrand()
@@ -29,7 +29,7 @@ class ChainedHash{
 		        time_t timeSeed;
 			time( &timeSeed );
 			srand( ( unsigned int ) timeSeed );
-			long int seed;
+			long int seed = rand();
 			if(seed%2)	
 	                	this->randomSeed = seed-1;
 			else
@@ -39,7 +39,7 @@ class ChainedHash{
 		
 		long int hash(long int value)
 		{
-			return abs((value*randomSeed)>>(w-M))%m;
+			return abs((value*(this->randomSeed))>>(w-M))%m;
 		}
 		
 									       
@@ -122,7 +122,7 @@ bool ChainedHash::CheckValue(long int value)
 bool ChainedHash:: printStat()
 {
 
-	cout << "Total number of values added to hash :: " << totalCount << "\n Max value is :: " << max << "\n Avg value is :: " << avg << "\n mu is :: " << mu ;
+	cout << "Total number of values added to hash :: " << totalCount << "\n Max value is :: " << max << "\n Avg value is :: " << avg << "\n mu is :: " << mu << "\n";
 
 }
 
@@ -142,31 +142,32 @@ bool ChainedHash:: calcStat()
 		if(count > this->max)
 		{
 			this->max = count;
-				
+			//cout << count << "  " << max << " \n";	
 		}
 
 		this->totalCount += count;
 	}
 
 
-	this->avg = this->totalCount / m ;
+	this->avg = ( (double)this->totalCount / m );
 
-	for(long int i = 0 ; i < m ; i++)\
+	for(long int i = 0 ; i < m ; i++)
 	{
 		long int count = 0;
 		Node *ptr = HashTable[i];
-
+		
 		while(ptr)
 		{
 			count++;
 			ptr = ptr->next;
 		}
+		
 				
-		this->mu+=((count - this->avg)*(count - this->avg));				
+		this->mu+=(double)((count - this->avg)*(count - this->avg));				
 
 	}
 
-	this->mu = this->mu / m ;
+	this->mu = ( this->mu / m );
 		
 }
 
@@ -186,7 +187,7 @@ int main(int argc , char *argv[])
 		if(!chain.CheckValue(random))
 			cout << random << " was not added to the Table\n"; 
 	}
-	cout << "Stats for HashTable\n" << " M : " << M << " n : " << n << " w : " << w << " m : " << m << "\n";
+	cout << "Stats for HashTable\n" << " M : " << M << "\n n : " << n << " \n w : " << w << " \n m : " << m << "\n";
 	chain.calcStat();
 	chain.printStat();
 }
