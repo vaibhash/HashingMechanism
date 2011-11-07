@@ -10,9 +10,9 @@ typedef struct linkNode{
 }Node;
 
 int const M = 16;
-long int const n = 100000;
+long int const n = 10000;
 int const w = 32;
-long int const m = 65536      ;//pow(2,M)
+long int const m = 37268;     //pow(2,M)
 
 		
 class OpenAddress{
@@ -98,11 +98,12 @@ bool OpenAddress::AddValue(long int value)
 	long int indexA = hashA(value);
 	long int indexB = hashB(value);
 	long int index = (indexA + indexB)%m;
+	long int t = 1;
 
 	this->current->next = new Node;
 	this->current = this->current->next;
 	this->current->next = NULL;
-	long int t = 0;
+
 	if(HashTable[indexA] == 0)
 	{
 		HashTable[indexA] = value;
@@ -110,12 +111,11 @@ bool OpenAddress::AddValue(long int value)
 	}
 	else
 	{
-
+		t++;
 		while( (HashTable[index] != 0) && (t!=m))
 		{
 			index = (index + indexB) %m;
 			t++;
-				
 		}
 		this->current->t = t;
 		if(t!=m)
@@ -124,7 +124,7 @@ bool OpenAddress::AddValue(long int value)
 		}	
 		else
 		{
-			this->failCounter++;
+			this->failCounter+=1;
 		}
 
 	}
@@ -143,6 +143,7 @@ bool OpenAddress::CheckValue(long int value)
 		return true;
 	else
 	{
+		t++;
 		while( (HashTable[index] != value) && (t!=m))
 		{
 			index = (index + indexB) %m;
@@ -161,88 +162,59 @@ bool OpenAddress::CheckValue(long int value)
 bool OpenAddress:: printStat()
 {
 
-	cout << "Total number of values added to hash :: " << totalCount << "\n Max value is :: " << max << "\n Avg value is :: " << avg << "\n mu is :: " << mu << "\n";
+	cout << "Total number of trials :: " << totalCount << "\n Max value of trial is :: " << max << "\n Avg value of trial is :: " << avg << "\n mu is :: " << mu << "\ntotal number of failures : " << failCounter;
 
 }
 
 bool OpenAddress:: calcStat()
 {
-/*
-	for(long int i = 0 ; i < m ; i++)
+	Node *traverse = &this->list;
+	traverse = traverse->next;
+	long int count = 0;
+	while(traverse)
 	{
-		long int count = 0;
-		Node *ptr = HashTable[i];
-				
-		while(ptr)
-		{
-			count++;
-			ptr = ptr->next;
-		}
-
-		if(count > this->max)
-		{
-			this->max = count;
-			//cout << count << "  " << max << " \n";	
-		}
-
-		this->totalCount += count;
+		count+=(traverse->t);
+		if(traverse->t > this->max)
+			this->max = traverse->t;
+		traverse = traverse->next;
 	}
+	this->totalCount += count;
+	
+	this->avg = ( (double)this->totalCount / n );
 
 
-	this->avg = ( (double)this->totalCount / m );
+ 	traverse = &this->list;
+	traverse = traverse->next;
+        while(traverse)
+        {       
+                this->mu+=((traverse->t - this->avg)*(traverse->t - this->avg));
+                traverse = traverse->next;
+        }       
 
-	for(long int i = 0 ; i < m ; i++)
-	{
-		long int count = 0;
-		Node *ptr = HashTable[i];
-		
-		while(ptr)
-		{
-			count++;
-			ptr = ptr->next;
-		}
-		
-				
-		this->mu+=(double)((count - this->avg)*(count - this->avg));				
-
-	}
-
-	this->mu = ( this->mu / m );
-*/		
+	this->mu = ( this->mu / n );	
 }
 
 
 
 int main(int argc , char *argv[])
 {
-/*
+
 	OpenAddress chain;
 	time_t timeSeed;           
 	time( &timeSeed );
 	srand( ( unsigned int ) timeSeed );
-	Node *head;
-	Node *current = new Node;
-	long int random = rand();
-	current->t = 0;
-	current->next = NULL;
-	head = current;
+	
 	for(long int i = 1 ; i < n ; i ++ )
 	{
-		current = current->next;
-		random = rand();
-		current = new Node;
-		current->data = random;
-		current->t = 0;
-		current->next = NULL;
+		long int random = rand();
 		chain.AddValue(random);
-		//cout << "Adding " << random << " to the Table\n";
+		cout << "Adding " << random << " to the Table\n";
 		if(!chain.CheckValue(random))
 			cout << random << " was not added to the Table\n"; 
 	}
 	cout << "Stats for HashTable\n" << " M : " << M << "\n n : " << n << " \n w : " << w << " \n m : " << m << "\n";
 	chain.calcStat();
 	chain.printStat();
-*/
 }
 
 
