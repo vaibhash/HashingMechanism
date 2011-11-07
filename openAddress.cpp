@@ -5,7 +5,7 @@
 
 using namespace std;
 typedef struct linkNode{
-	int data;
+	int t;
 	struct linkNode *next;
 }Node;
 
@@ -17,31 +17,52 @@ long int const m = 65536      ;//pow(2,M)
 		
 class OpenAddress{
 	private:
-		Node* HashTable[m]; 
-		long int randomSeed;
+		long int HashTable[m]; 
+		long int randomSeedA;
+		long int randomSeedB;
 		long int max;
 		double avg;
 		double mu;
 		long int totalCount;
-
-		bool genrand()
+		long int failCounter;
+		Node list;
+		Node * current;
+		
+		bool genrandA()
 		{
 		        time_t timeSeed;
 			time( &timeSeed );
 			srand( ( unsigned int ) timeSeed );
 			long int seed = rand();
 			if(seed%2)	
-	                	this->randomSeed = seed-1;
+	                	this->randomSeedA = seed-1;
 			else
-				this->randomSeed = seed;
+				this->randomSeedA = seed;
+				
+		}
+	
+		bool genrandB()
+		{
+		        time_t timeSeed;
+			time( &timeSeed );
+			srand( ( unsigned int ) timeSeed );
+			long int seed = rand();
+			if(seed%2)	
+	                	this->randomSeedB = seed-1;
+			else
+				this->randomSeedB = seed;
 				
 		}
 		
-		long int hash(long int value)
+		long int hashA(long int value)
 		{
-			return abs((value*(this->randomSeed))>>(w-M))%m;
+			return abs((value*(this->randomSeedA))>>(w-M))%m;
 		}
-		
+	
+		long int hashB(long int value)
+		{
+			return abs((value*(this->randomSeedB))>>(w-M))%m;
+		}
 									       
 	public:
 		bool calcStat();
@@ -51,13 +72,17 @@ class OpenAddress{
 
 		OpenAddress() 
 		{
-			genrand();
+			genrandA();
+			genrandB();
 			this->totalCount = 0;
 			this->max = 0;
 			this->avg = 0;
 			this->mu = 0;
 			for(long int i = 0 ; i < m ; i ++ )
-				HashTable[i] = NULL;
+				HashTable[i] = 0;
+			this->list.t = -1;
+			this->current = &this->list;
+			this->failCounter = 0;
 		}
 	
 		~OpenAddress() 
@@ -69,53 +94,67 @@ class OpenAddress{
 
 bool OpenAddress::AddValue(long int value)
 {
-	long int index = hash(value);
-	//cout << "index is :: " << index <<endl;
-	Node *pointer = NULL;
-	pointer = HashTable[index];
-	if(pointer == NULL)
+
+	long int indexA = hashA(value);
+	long int indexB = hashB(value);
+	long int index = (indexA + indexB)%m;
+
+	this->current->next = new Node;
+	this->current = this->current->next;
+	this->current->next = NULL;
+	long int t = 0;
+	if(HashTable[indexA] == 0)
 	{
-				
-		pointer = new Node;
-		pointer->data = value;
-		pointer->next = NULL;
-		HashTable[index] = pointer;
+		HashTable[indexA] = value;
+		this->current->t = t;
 	}
 	else
 	{
-		//cout << "else ??\n";
-		while(pointer->next!=NULL)
-			pointer = pointer->next;
-		//cout << "out of while loop in add value\n";
-		pointer->next = new Node;
-		//cout << "new node allocated in add value\n";
-	       	pointer = pointer->next;
-		pointer->data = value;	
-		pointer->next = NULL;
+
+		while( (HashTable[index] != 0) && (t!=m))
+		{
+			index = (index + indexB) %m;
+			t++;
+				
+		}
+		this->current->t = t;
+		if(t!=m)
+		{		
+			HashTable[index] = value;
+		}	
+		else
+		{
+			this->failCounter++;
+		}
 
 	}
 	
 	return true;
-
 }
 
 bool OpenAddress::CheckValue(long int value)
 {
-	long int index = hash(value);
-	Node *pointer = NULL;
-	pointer = HashTable[index];
-	if(pointer == NULL )
-		return false;
+
+	long int indexA = hashA(value);
+	long int indexB = hashB(value);
+	long int index = (indexA + indexB) % m;
+	long int t;
+	if(HashTable[indexA] == value )
+		return true;
 	else
 	{
-		while(pointer)
+		while( (HashTable[index] != value) && (t!=m))
 		{
-			if(pointer->data==value)
-				return true;
-			pointer = pointer->next;
+			index = (index + indexB) %m;
+			t++;
 		}
-		return false;
-	}	
+		if(t==m)
+		{		
+			return false;
+		}	
+		return true;
+	}
+
 }
 
 
@@ -128,6 +167,7 @@ bool OpenAddress:: printStat()
 
 bool OpenAddress:: calcStat()
 {
+/*
 	for(long int i = 0 ; i < m ; i++)
 	{
 		long int count = 0;
@@ -168,20 +208,32 @@ bool OpenAddress:: calcStat()
 	}
 
 	this->mu = ( this->mu / m );
-		
+*/		
 }
 
 
 
 int main(int argc , char *argv[])
 {
+/*
 	OpenAddress chain;
 	time_t timeSeed;           
 	time( &timeSeed );
 	srand( ( unsigned int ) timeSeed );
-	for(long int i = 0 ; i < n ; i ++ )
+	Node *head;
+	Node *current = new Node;
+	long int random = rand();
+	current->t = 0;
+	current->next = NULL;
+	head = current;
+	for(long int i = 1 ; i < n ; i ++ )
 	{
-		long int random = rand();
+		current = current->next;
+		random = rand();
+		current = new Node;
+		current->data = random;
+		current->t = 0;
+		current->next = NULL;
 		chain.AddValue(random);
 		//cout << "Adding " << random << " to the Table\n";
 		if(!chain.CheckValue(random))
@@ -190,6 +242,7 @@ int main(int argc , char *argv[])
 	cout << "Stats for HashTable\n" << " M : " << M << "\n n : " << n << " \n w : " << w << " \n m : " << m << "\n";
 	chain.calcStat();
 	chain.printStat();
+*/
 }
 
 
